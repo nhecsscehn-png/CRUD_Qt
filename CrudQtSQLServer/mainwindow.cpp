@@ -10,12 +10,14 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QHeaderView>
+#include <QSqlDatabase>      // ← AJOUTÉ
+#include <QSqlTableModel>    // ← AJOUTÉ
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     // ====================== CONNEXION À SQL SERVER ======================
-    connecterBaseDeDonnees(DEINODRUEN\SQLEXPRESS(SQL Server 15.0.2000 - Deinodruen\snh93)); // connecterBaseDeDonnees() (serveur, base de données…)
+    connecterBaseDeDonnees();        // Appel correct (sans arguments)
 
     // ====================== INTERFACE ======================
     QWidget *central = new QWidget(this);
@@ -73,25 +75,25 @@ MainWindow::~MainWindow()
         db.close();
 }
 
-// ====================== CONNEXION SQL SERVER ======================
+// ====================== CONNEXION À SQL SERVER ======================
 void MainWindow::connecterBaseDeDonnees()
 {
-    db = QSqlDatabase::addDatabase("QODBC");   // Driver ODBC obligatoire pour SQL Server
+    db = QSqlDatabase::addDatabase("QODBC");   // Driver ODBC pour SQL Server
 
-    // === À MODIFIER SELON TON SERVEUR ===
+    // === CHAÎNE DE CONNEXION À MODIFIER SELON TON SERVEUR ===
     QString connString = "DRIVER={SQL Server};"
-                         "SERVER=localhost;"           // ou ton serveur (ex: DESKTOP-XYZ\\SQLEXPRESS)
-                         "DATABASE=CrudQtDB;"          // nom de ta base de données
-                         "Trusted_Connection=Yes;";    // Authentification Windows (recommandé)
-
-    // Si tu utilises un utilisateur + mot de passe :
-    // "DRIVER={SQL Server};SERVER=localhost;DATABASE=CrudQtDB;UID=sa;PWD=tonmotdepasse;"
+                         "SERVER=DEINODRUEN\\SQLEXPRESS;"   // ← Important : double backslash
+                         "DATABASE=vde;"               // Nom de la base de données
+                         "Trusted_Connection=Yes;";         // Authentification Windows
 
     db.setDatabaseName(connString);
 
-    if (!db.open()) {
+    if (db.open()) {
+        QMessageBox::information(this, "Connexion réussie", "Connecté à SQL Server avec succès !");
+    } else {
         QMessageBox::critical(this, "Erreur de connexion",
-                              "Impossible de se connecter à SQL Server :\n" + db.lastError().text());
+                              "Impossible de se connecter à SQL Server :\n"
+                                  + db.lastError().text());
     }
 }
 
@@ -103,7 +105,7 @@ void MainWindow::chargerDonnees()
     if (!model) {
         model = new QSqlTableModel(this, db);
         model->setTable("Personnes");
-        model->setEditStrategy(QSqlTableModel::OnManualSubmit); // On valide manuellement
+        model->setEditStrategy(QSqlTableModel::OnManualSubmit);
         model->setHeaderData(1, Qt::Horizontal, "Nom");
         model->setHeaderData(2, Qt::Horizontal, "Prénom");
         model->setHeaderData(3, Qt::Horizontal, "Code");
@@ -111,9 +113,7 @@ void MainWindow::chargerDonnees()
 
     model->select();
     tableView->setModel(model);
-
-    // Masquer la colonne ID (optionnel)
-    tableView->hideColumn(0);
+    tableView->hideColumn(0);   // Masque la colonne ID
 }
 
 // ====================== CRUD ======================
@@ -128,8 +128,10 @@ void MainWindow::on_btnAjouter_clicked()
     query.addBindValue(leCode->text());
 
     if (query.exec()) {
-        QMessageBox::information(this, "Succès", "Personne ajoutée !");
-        leNom->clear(); lePrenom->clear(); leCode->clear();
+        QMessageBox::information(this, "Succès", "Personne ajoutée avec succès !");
+        leNom->clear();
+        lePrenom->clear();
+        leCode->clear();
         model->select();        // Rafraîchit la table
     } else {
         QMessageBox::warning(this, "Erreur", query.lastError().text());
@@ -140,7 +142,7 @@ void MainWindow::on_btnModifier_clicked()
 {
     QModelIndex index = tableView->currentIndex();
     if (!index.isValid()) {
-        QMessageBox::warning(this, "Attention", "Sélectionne une ligne à modifier !");
+        QMessageBox::warning(this, "Attention", "Veuillez sélectionner une ligne à modifier !");
         return;
     }
 
@@ -154,7 +156,7 @@ void MainWindow::on_btnModifier_clicked()
     query.addBindValue(id);
 
     if (query.exec()) {
-        QMessageBox::information(this, "Succès", "Personne modifiée !");
+        QMessageBox::information(this, "Succès", "Personne modifiée avec succès !");
         model->select();
     } else {
         QMessageBox::warning(this, "Erreur", query.lastError().text());
@@ -165,11 +167,12 @@ void MainWindow::on_btnSupprimer_clicked()
 {
     QModelIndex index = tableView->currentIndex();
     if (!index.isValid()) {
-        QMessageBox::warning(this, "Attention", "Sélectionne une ligne à supprimer !");
+        QMessageBox::warning(this, "Attention", "Veuillez sélectionner une ligne à supprimer !");
         return;
     }
 
-    if (QMessageBox::question(this, "Confirmation", "Supprimer cette personne ?") != QMessageBox::Yes)
+    if (QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cette personne ?")
+        != QMessageBox::Yes)
         return;
 
     int id = model->index(index.row(), 0).data().toInt();
