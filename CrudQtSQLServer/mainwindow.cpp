@@ -1,17 +1,22 @@
-#include "mainwindow.h"
-#include <QTableView>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QFormLayout>
-#include <QGroupBox>
-#include <QMessageBox>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QHeaderView>
-#include <QSqlDatabase>      // ← AJOUTÉ
-#include <QSqlTableModel>    // ← AJOUTÉ
+#include "mainwindow.h"           // Fichier d'en-tête de notre classe MainWindow (déclarations des membres et slots)
+
+#include <QTableView>             // Widget qui affiche les données sous forme de tableau (notre QTableView)
+#include <QLineEdit>              // Champ de saisie texte (utilisé pour Nom, Prénom et Code)
+#include <QPushButton>            // Boutons cliquables (Ajouter, Modifier, Supprimer, Rafraîchir)
+
+#include <QVBoxLayout>            // Layout vertical (empile les éléments de haut en bas)
+#include <QHBoxLayout>            // Layout horizontal (place les éléments côte à côte)
+#include <QFormLayout>            // Layout spécialisé pour les formulaires (label + champ sur la même ligne)
+#include <QGroupBox>              // Cadre avec titre pour regrouper le formulaire de saisie
+
+#include <QMessageBox>            // Boîtes de dialogue pour afficher des messages (succès, erreurs, confirmation)
+
+#include <QSqlError>              // Permet de récupérer et afficher les erreurs SQL détaillées
+#include <QSqlQuery>              // Permet d'exécuter des requêtes SQL (INSERT, UPDATE, DELETE)
+#include <QSqlDatabase>           // Gestion de la connexion à la base de données
+#include <QSqlTableModel>         // Modèle qui relie automatiquement une table SQL à un QTableView
+
+#include <QHeaderView>            // Permet de personnaliser l'en-tête du tableau (étirement des colonnes, etc.)
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
