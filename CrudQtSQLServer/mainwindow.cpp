@@ -116,9 +116,9 @@ void MainWindow::chargerDonnees()
         model->setEditStrategy(QSqlTableModel::OnManualSubmit); // On valide les modifications manuellement
 
         // Personnalisation des en-têtes de colonnes
-        model->setHeaderData(1, Qt::Horizontal, "Nom");
-        model->setHeaderData(2, Qt::Horizontal, "Prénom");
-        model->setHeaderData(3, Qt::Horizontal, "Code");
+        model->setHeaderData(1, Qt::Horizontal, "Nom");     // Permet de renommer "nom" en "Nom"
+        model->setHeaderData(2, Qt::Horizontal, "Prénom");  // Permet de renommer "prenom" en "Prénom"
+        model->setHeaderData(3, Qt::Horizontal, "Code");    // Permet de renommer "code" en "Code"
     }
 
     model->select();                       // Charge les données depuis la base
@@ -131,22 +131,22 @@ void MainWindow::chargerDonnees()
 // Ajouter une nouvelle personne
 void MainWindow::on_btnAjouter_clicked()
 {
-    if (!db.isOpen()) return;
+    if (!db.isOpen()) return;  // Si la base de données N'EST PAS ouverte sort immédiatement de la fonction (évite un crash)
 
-    QSqlQuery query(db);
-    query.prepare("INSERT INTO Personnes (nom, prenom, code) VALUES (?, ?, ?)");
-    query.addBindValue(leNom->text());
-    query.addBindValue(lePrenom->text());
-    query.addBindValue(leCode->text());
+    QSqlQuery query(db);  // Constructeur : lie la requête à la connexion db
+    query.prepare("INSERT INTO Personnes (nom, prenom, code) VALUES (?, ?, ?)");  // Voir https://imgur.com/a/JlJ69uH
+    query.addBindValue(leNom->text());    // Ajouter la valeur qui était dans le champs. Voir https://imgur.com/a/4vYLtlq
+    query.addBindValue(lePrenom->text()); // Pareil que la ligne du dessus mais avec le prénom
+    query.addBindValue(leCode->text());   // Pareil que la ligne du dessus mais avec le code
 
-    if (query.exec()) {
-        QMessageBox::information(this, "Succès", "Personne ajoutée avec succès !");
+    if (query.exec()) {  // query.exec() : Envoie la requête préparée à la base de données pour exécution
+        QMessageBox::information(this, "Succès", "Personne ajoutée avec succès !");  // Boite de dialogue qui affiche un message. Voir : https://imgur.com/a/skt4UHW
         leNom->clear();                    // Vide les champs après ajout
         lePrenom->clear();
         leCode->clear();
-        model->select();                   // Rafraîchit le tableau
+        model->select();                   // Rafraîchit le tableau (Recharge toutes les données depuis la table Personnes)
     } else {
-        QMessageBox::warning(this, "Erreur", query.lastError().text());
+        QMessageBox::warning(this, "Erreur", query.lastError().text());  // Affiche l'erreur à l'utilisateur. Voir : https://imgur.com/a/6KmpSSp
     }
 }
 
@@ -154,22 +154,22 @@ void MainWindow::on_btnAjouter_clicked()
 void MainWindow::on_btnModifier_clicked()
 {
     QModelIndex index = tableView->currentIndex();   // Récupère la ligne sélectionnée
-    if (!index.isValid()) {
-        QMessageBox::warning(this, "Attention", "Veuillez sélectionner une ligne à modifier !");
+    if (!index.isValid()) { // Si aucune ligne n'est sélectionné (index invalide). Voir https://imgur.com/a/dhBJCTW
+        QMessageBox::warning(this, "Attention", "Veuillez sélectionner une ligne à modifier !"); // Message de prévention. Voir https://imgur.com/a/wGKvrXs
         return;
     }
 
-    int id = model->index(index.row(), 0).data().toInt();  // Récupère l'ID de la personne
+    int id = model->index(index.row(), 0).data().toInt();  // Récupère l'ID de la personne (L'ID est la clé primaire). Voir https://imgur.com/a/InTPNm3
 
     QSqlQuery query(db);
     query.prepare("UPDATE Personnes SET nom = ?, prenom = ?, code = ? WHERE id = ?");
-    query.addBindValue(leNom->text());
-    query.addBindValue(lePrenom->text());
-    query.addBindValue(leCode->text());
+    query.addBindValue(leNom->text());     // Ajouter la valeur qui était dans le champs. Voir https://imgur.com/a/4vYLtlq
+    query.addBindValue(lePrenom->text());  // Pareil que la ligne du dessus mais avec le prénom
+    query.addBindValue(leCode->text());    // Pareil que la ligne du dessus mais avec le code
     query.addBindValue(id);
 
-    if (query.exec()) {
-        QMessageBox::information(this, "Succès", "Personne modifiée avec succès !");
+    if (query.exec()) {  // Signifie "Si la requête est exécutée". Voir https://imgur.com/a/VRUpgoH
+        QMessageBox::information(this, "Succès", "Personne modifiée avec succès !");  // Affiche une fenêtre avec un message
         model->select();                   // Rafraîchit le tableau
     } else {
         QMessageBox::warning(this, "Erreur", query.lastError().text());
@@ -179,24 +179,24 @@ void MainWindow::on_btnModifier_clicked()
 // Supprimer la personne sélectionnée
 void MainWindow::on_btnSupprimer_clicked()
 {
-    QModelIndex index = tableView->currentIndex();
-    if (!index.isValid()) {
+    QModelIndex index = tableView->currentIndex(); // Récupère la ligne sélectionnée par l'utilisateur dans le tableau. Voir https://imgur.com/a/3YeBu4s
+    if (!index.isValid()) {  // Signifie "si un index n'est pas sélectionné"
         QMessageBox::warning(this, "Attention", "Veuillez sélectionner une ligne à supprimer !");
         return;
     }
 
     // Demande de confirmation avant suppression
-    if (QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cette personne ?")
-        != QMessageBox::Yes)
-        return;
+    if (QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cette personne ?") // Affiche une boîte de dialogue avec icône et boutons Oui/Non
+        != QMessageBox::Yes) // Si la réponse N'EST PAS "Oui"
+        return; // Sert à sortir immédiatement de la fonction (annule la suppression)
 
-    int id = model->index(index.row(), 0).data().toInt();
+    int id = model->index(index.row(), 0).data().toInt();  // Récupère l'ID de la personne (L'ID est la clé primaire). Voir https://imgur.com/a/InTPNm3
 
-    QSqlQuery query(db);
-    query.prepare("DELETE FROM Personnes WHERE id = ?");
-    query.addBindValue(id);
+    QSqlQuery query(db); // QSqlQuery : Permet d'exécuter des requêtes SQL (SELECT, INSERT, UPDATE, DELETE). Voir https://imgur.com/a/PVKHdqq
+    query.prepare("DELETE FROM Personnes WHERE id = ?");  // Préparation de la requête à appliquer sur l'ID. Voir https://imgur.com/a/wgDwWsd
+    query.addBindValue(id);  // On remplace le '?' par l'ID. Voir https://imgur.com/a/Y31FDl9
 
-    if (query.exec()) {
+    if (query.exec()) {  // Exécute la requête
         model->select();                   // Rafraîchit le tableau après suppression
     } else {
         QMessageBox::warning(this, "Erreur", query.lastError().text());
