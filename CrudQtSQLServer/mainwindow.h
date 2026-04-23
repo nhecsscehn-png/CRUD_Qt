@@ -2,6 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+
+// === AJOUTS OBLIGATOIRES POUR QUE ÇA COMPILE ===
+#include <QTableView>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QSqlDatabase>
 #include <QSqlTableModel>
 
@@ -27,18 +32,19 @@ private:
     void connecterBaseDeDonnees();
     void chargerDonnees();
 
+    // Base de données
     QSqlDatabase db;
     QSqlTableModel *model = nullptr;
 
-    // Widgets créés en code
-    QTableView *tableView;
-    QLineEdit *leNom;
-    QLineEdit *lePrenom;
-    QLineEdit *leCode;
-    QPushButton *btnAjouter;
-    QPushButton *btnModifier;
-    QPushButton *btnSupprimer;
-    QPushButton *btnRafraichir;
+    // Widgets de l'interface
+    QTableView   *tableView   = nullptr;
+    QLineEdit    *leNom       = nullptr;
+    QLineEdit    *lePrenom    = nullptr;
+    QLineEdit    *leCode      = nullptr;
+    QPushButton  *btnAjouter    = nullptr;
+    QPushButton  *btnModifier   = nullptr;
+    QPushButton  *btnSupprimer  = nullptr;
+    QPushButton  *btnRafraichir = nullptr;
 };
 
 #endif // MAINWINDOW_H
